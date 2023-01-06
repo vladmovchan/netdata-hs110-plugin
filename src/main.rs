@@ -1,8 +1,21 @@
 use netdata_plugin::{collector::Collector, Algorithm, Chart, ChartType, Dimension};
-use std::{error, io};
+use std::{env, error, io};
 use tplink_hs1x0::HS110;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
+    let delay = env::args()
+        .skip(1)
+        .next()
+        .unwrap_or_else(|| {
+            eprintln!("Warning: delay has not been specified, using 1 sec delay");
+            "1".to_string()
+        })
+        .parse::<u64>()
+        .unwrap_or_else(|err| {
+            eprintln!("Warning: unable to parse specified delay ({err}), using 1 sec delay");
+            1
+        });
+
     let mut writer = io::stdout();
     let mut collector = Collector::new(&mut writer);
 
@@ -148,6 +161,6 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         collector.commit_chart(charts[2].type_id).unwrap();
         collector.commit_chart(charts[3].type_id).unwrap();
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(delay));
     }
 }
