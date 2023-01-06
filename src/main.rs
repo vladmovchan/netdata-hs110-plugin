@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             name: "Current",
             title: "Currenttitle",
             units: "amps",
-            familiy: "devices",
+            familiy: "current",
             context: "smartplugpower.current",
             charttype: Some(ChartType::line),
             ..Default::default()
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             name: "Voltage",
             title: "Voltagetitle",
             units: "volts",
-            familiy: "devices",
+            familiy: "voltage",
             context: "smartplugpower.voltage",
             charttype: Some(ChartType::line),
             ..Default::default()
@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             name: "Power",
             title: "Powertitle",
             units: "watts",
-            familiy: "devices",
+            familiy: "power",
             context: "smartplugpower.power",
             charttype: Some(ChartType::area),
             ..Default::default()
@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             name: "Total",
             title: "Totaltitle",
             units: "watt-hours",
-            familiy: "devices",
+            familiy: "power",
             context: "smartplugpower.total",
             charttype: Some(ChartType::line),
             ..Default::default()
