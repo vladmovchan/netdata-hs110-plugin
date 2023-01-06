@@ -21,43 +21,47 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     let charts = vec![
         Chart {
-            type_id: "power.cur",
+            type_id: "Smartplugs.current",
             name: "Current",
-            title: "Currenttitle",
+            title: "Current",
             units: "amps",
             familiy: "current",
             context: "smartplugpower.current",
             charttype: Some(ChartType::line),
+            priority: Some(92000),
             ..Default::default()
         },
         Chart {
-            type_id: "power.volt",
+            type_id: "Smartplugs.voltage",
             name: "Voltage",
-            title: "Voltagetitle",
+            title: "Voltage",
             units: "volts",
             familiy: "voltage",
             context: "smartplugpower.voltage",
             charttype: Some(ChartType::line),
+            priority: Some(91000),
             ..Default::default()
         },
         Chart {
-            type_id: "power.pow",
+            type_id: "Smartplugs.power",
             name: "Power",
-            title: "Powertitle",
+            title: "Power",
             units: "watts",
             familiy: "power",
             context: "smartplugpower.power",
             charttype: Some(ChartType::area),
+            priority: Some(90000),
             ..Default::default()
         },
         Chart {
-            type_id: "power.tot",
+            type_id: "Smartplugs.total-consumption",
             name: "Total",
-            title: "Totaltitle",
+            title: "Total consumption",
             units: "watt-hours",
-            familiy: "power",
+            familiy: "consumption",
             context: "smartplugpower.total",
             charttype: Some(ChartType::line),
+            priority: Some(94000),
             ..Default::default()
         },
     ];
