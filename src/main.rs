@@ -1,7 +1,13 @@
 use core::time;
 use netdata_plugin::{collector::Collector, Algorithm, Chart, ChartType, Dimension};
-use std::{env, error, io, thread, time::Instant};
+use serde::{Deserialize, Serialize};
+use std::{env, error, fs::File, io, thread, time::Instant};
 use tplink_hs1x0::HS110;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Config {
+    hosts: Vec<String>,
+}
 
 #[derive(Debug)]
 struct Device<'a> {
@@ -42,6 +48,28 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             );
             1
         });
+
+    let config_path = format!(
+        "{dir}/hs110.conf",
+        dir = env::var("NETDATA_USER_CONFIG_DIR").unwrap_or_else(|_| {
+            let fallback = "/usr/local/etc/netdata".to_owned();
+            eprintln_time_and_name!(
+                "Warning: `NETDATA_USER_CONFIG_DIR` environment variable is not defined. \
+                Using `{fallback}`."
+            );
+            fallback
+        })
+    );
+    eprintln_time_and_name!("Info: Reading config file `{config_path}`...");
+    let config: Config = serde_yaml::from_reader(File::open(config_path)?)?;
+    if config.hosts.is_empty() {
+        eprintln_time_and_name!("Error: at least one host has to be specified in the config");
+        return Err("At least one host has to be specified in the config".into());
+    }
+    eprintln_time_and_name!(
+        "Info: The following devices are going to be polled: {:?}",
+        config.hosts
+    );
 
     let mut writer = io::stdout();
     let mut collector = Collector::new(&mut writer);
@@ -105,16 +133,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         ),
     ];
 
-    let ips = vec![
-        "192.168.0.191",
-        "192.168.0.156",
-        "192.168.0.155",
-        "192.168.0.123",
-        "192.168.0.102",
-        "192.168.0.122",
-    ];
-
-    let devices = ips
+    let devices = config
+        .hosts
         .iter()
         .map(|ip| {
             let dimension_prefix = ip.replace('.', "_");
