@@ -11,8 +11,8 @@ struct Config {
 
 #[derive(Debug)]
 struct Device<'a> {
-    ip: &'a str,
-    hostname: String,
+    addr: &'a str,
+    alias: String,
     dimension_prefix: String,
     hs110: HS110,
 }
@@ -136,14 +136,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let devices = config
         .hosts
         .iter()
-        .map(|ip| {
-            let dimension_prefix = ip.replace('.', "_");
-            let hs110 = HS110::new(ip.to_string());
-            let hostname = hs110.hostname().unwrap_or_else(|_| "<unknown>".to_owned());
+        .map(|addr| {
+            let dimension_prefix = addr.replace('.', "_");
+            let hs110 = HS110::new(addr.to_string());
+            let alias = hs110.hostname().unwrap_or_else(|_| "<unknown>".to_owned());
             Device {
-                ip,
+                addr,
                 dimension_prefix,
-                hostname,
+                alias,
                 hs110,
             }
         })
@@ -152,15 +152,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     for (chart, index) in charts_and_indexes.iter() {
         collector.add_chart(chart)?;
         for Device {
-            ip,
-            hostname,
+            addr,
+            alias,
             dimension_prefix,
             ..
         } in devices.iter()
         {
             let dimension = Dimension {
                 id: &format!("{dimension_prefix}_{chart_name}", chart_name = chart.name),
-                name: &format!("{hostname} ({ip})"),
+                name: &format!("{alias} ({addr})"),
                 algorithm: Some(Algorithm::absolute),
                 divisor: match index.find("_m") {
                     Some(_) => Some(1000),
@@ -177,15 +177,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         for Device {
             hs110,
             dimension_prefix,
-            hostname,
-            ip,
+            alias,
+            addr,
         } in devices.iter()
         {
             let emeter = match hs110.emeter_parsed() {
                 Ok(res) => res,
                 Err(e) => {
                     eprintln_time_and_name!(
-                        "Warning: unable to obtain emeter values from {ip} [{hostname}]: {e}"
+                        "Warning: unable to obtain emeter values from {addr} [{alias}]: {e}"
                     );
                     continue;
                 }
@@ -200,7 +200,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                             &dimension_id,
                             value.as_f64().unwrap_or_else(|| {
                                 eprintln_time_and_name!(
-                                    "Warning: unable to parse `{index}` value `{value}` obtained from {ip} [{hostname}]"
+                                    "Warning: unable to parse `{index}` value `{value}` obtained from {addr} [{alias}]"
                                 );
                                 0.0
                             }) as i64,
@@ -208,7 +208,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                     }
                     None => {
                         eprintln_time_and_name!(
-                            "Warning: `{index}` is not available in emeter readings from {ip} [{hostname}]"
+                            "Warning: `{index}` is not available in emeter readings from {addr} [{alias}]"
                         );
                         continue;
                     }
