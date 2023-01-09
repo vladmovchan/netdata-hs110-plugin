@@ -11,17 +11,35 @@ struct Device<'a> {
     hs110: HS110,
 }
 
+macro_rules! eprintln_time_and_name {
+    ($($arg:tt)*) => {
+        let binary_path = env::args().next().unwrap_or_else(|| "".to_owned());
+        let binary_name = match binary_path.rfind('/') {
+            Some(pos) => binary_path[pos+1..].to_owned(),
+            None => binary_path,
+        };
+        eprintln!(
+            "{}: {}: {}",
+            chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            binary_name,
+            format!($($arg)*)
+        );
+    };
+}
+
 fn main() -> Result<(), Box<dyn error::Error>> {
     let delay = env::args()
         .skip(1)
         .next()
         .unwrap_or_else(|| {
-            eprintln!("Warning: delay has not been specified, using 1 sec delay");
+            eprintln_time_and_name!("Warning: delay has not been specified, using 1 sec delay");
             "1".to_string()
         })
         .parse::<u64>()
         .unwrap_or_else(|err| {
-            eprintln!("Warning: unable to parse specified delay ({err}), using 1 sec delay");
+            eprintln_time_and_name!(
+                "Warning: unable to parse specified delay ({err}), using 1 sec delay"
+            );
             1
         });
 
@@ -146,7 +164,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             let emeter = match hs110.emeter_parsed() {
                 Ok(res) => res,
                 Err(e) => {
-                    eprintln!(
+                    eprintln_time_and_name!(
                         "Warning: unable to obtain emeter values from {ip} [{hostname}]: {e}"
                     );
                     continue;
@@ -161,7 +179,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                             chart.type_id,
                             &dimension_id,
                             value.as_f64().unwrap_or_else(|| {
-                                eprintln!(
+                                eprintln_time_and_name!(
                                     "Warning: unable to parse `{index}` value `{value}` obtained from {ip} [{hostname}]"
                                 );
                                 0.0
@@ -169,7 +187,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                         )?;
                     }
                     None => {
-                        eprintln!(
+                        eprintln_time_and_name!(
                             "Warning: `{index}` is not available in emeter readings from {ip} [{hostname}]"
                         );
                         continue;
