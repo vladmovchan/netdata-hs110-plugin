@@ -215,10 +215,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                 };
             }
         }
+
+        thread::sleep(time::Duration::from_secs(delay).saturating_sub(start.elapsed()));
         for (chart, _) in charts_and_indexes.iter() {
             collector.commit_chart(chart.type_id).unwrap();
         }
-
-        thread::sleep(time::Duration::from_secs(delay).saturating_sub(start.elapsed()));
     }
 }
