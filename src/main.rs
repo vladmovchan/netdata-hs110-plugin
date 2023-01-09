@@ -1,12 +1,13 @@
+use core::time;
 use netdata_plugin::{collector::Collector, Algorithm, Chart, ChartType, Dimension};
-use std::{env, error, io};
+use std::{env, error, io, thread, time::Instant};
 use tplink_hs1x0::HS110;
 
 #[derive(Debug)]
 struct Device<'a> {
     ip: &'a str,
-    dimension_prefix: String,
     hostname: String,
+    dimension_prefix: String,
     hs110: HS110,
 }
 
@@ -134,6 +135,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     }
 
     loop {
+        let start = Instant::now();
         for Device {
             hs110,
             dimension_prefix,
@@ -175,11 +177,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
                 };
             }
         }
-
         for (chart, _) in charts_and_indexes.iter() {
             collector.commit_chart(chart.type_id).unwrap();
         }
 
-        std::thread::sleep(std::time::Duration::from_secs(delay));
+        thread::sleep(time::Duration::from_secs(delay).saturating_sub(start.elapsed()));
     }
 }
