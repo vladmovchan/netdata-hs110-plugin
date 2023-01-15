@@ -138,7 +138,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         .iter()
         .map(|addr| {
             let dimension_prefix = addr.replace('.', "_");
-            let hs110 = HS110::new(addr.to_string());
+            let hs110 =
+                HS110::new(addr).with_timeout(time::Duration::from_millis(delay * 1000 / 2));
             let alias = hs110.hostname().unwrap_or_else(|_| "<unknown>".to_owned());
             Device {
                 addr,
