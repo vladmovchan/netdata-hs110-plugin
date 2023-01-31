@@ -1,4 +1,5 @@
 use core::time;
+use futures::{stream::FuturesUnordered, StreamExt};
 use netdata_plugin::{collector::Collector, Algorithm, Chart, ChartType, Dimension};
 use serde::{Deserialize, Serialize};
 use std::{env, error, fs::File, io, thread, time::Instant};
@@ -10,8 +11,8 @@ struct Config {
 }
 
 #[derive(Debug)]
-struct Device<'a> {
-    addr: &'a str,
+struct Device {
+    addr: String,
     alias: String,
     dimension_prefix: String,
     hs110: HS110,
@@ -33,7 +34,8 @@ macro_rules! eprintln_time_and_name {
     };
 }
 
-fn main() -> Result<(), Box<dyn error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn error::Error>> {
     let delay = env::args()
         .nth(1)
         .unwrap_or_else(|| {
@@ -132,32 +134,32 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         ),
     ];
 
-    let devices = config
+    let devices: Vec<_> = config
         .hosts
-        .iter()
+        .into_iter()
         .map(|addr| {
             let dimension_prefix = addr.replace('.', "_");
             let hs110 =
-                HS110::new(addr).with_timeout(time::Duration::from_millis(delay * 1000 / 2));
+                HS110::new(&addr).with_timeout(time::Duration::from_millis(delay * 1000 / 2));
             let alias = hs110.hostname().unwrap_or_else(|_| "<unknown>".to_owned());
-            Device {
+            std::sync::Arc::new(Device {
                 addr,
                 dimension_prefix,
                 alias,
                 hs110,
-            }
+            })
         })
-        .collect::<Vec<_>>();
+        .collect();
 
     for (chart, index) in charts_and_indexes.iter() {
         collector.add_chart(chart)?;
-        for Device {
-            addr,
-            alias,
-            dimension_prefix,
-            ..
-        } in devices.iter()
-        {
+        for device in &devices {
+            let Device {
+                addr,
+                alias,
+                dimension_prefix,
+                ..
+            } = &**device;
             let dimension = Dimension {
                 id: &format!("{dimension_prefix}_{chart_name}", chart_name = chart.name),
                 name: &format!("{alias} ({addr})"),
@@ -174,45 +176,63 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     loop {
         let start = Instant::now();
-        for Device {
-            hs110,
-            dimension_prefix,
-            alias,
-            addr,
-        } in devices.iter()
-        {
-            let emeter = match hs110.emeter_parsed() {
-                Ok(res) => res,
-                Err(e) => {
-                    eprintln_time_and_name!(
-                        "Warning: unable to obtain emeter values from {addr} [{alias}]: {e}"
-                    );
-                    continue;
-                }
-            };
-            for (chart, index) in charts_and_indexes.iter() {
-                match emeter.get(index) {
-                    Some(value) => {
-                        let dimension_id =
-                            format!("{dimension_prefix}_{chart_name}", chart_name = chart.name);
-                        collector.prepare_value(
-                            chart.type_id,
-                            &dimension_id,
-                            value.as_f64().unwrap_or_else(|| {
-                                eprintln_time_and_name!(
-                                    "Warning: unable to parse `{index}` value `{value}` obtained from {addr} [{alias}]"
+
+        let mut futures = devices
+            .iter()
+            .map(|device| {
+                let device = device.clone();
+                tokio::task::spawn_blocking(move || (device.hs110.emeter_parsed(), device))
+            })
+            .collect::<FuturesUnordered<_>>();
+
+        while let Some(ref res) = futures.next().await {
+            match res {
+                Ok((emeter, device)) => {
+                    let Device {
+                        dimension_prefix,
+                        alias,
+                        addr,
+                        ..
+                    } = &**device;
+                    let emeter = match emeter {
+                        Ok(res) => res,
+                        Err(e) => {
+                            eprintln_time_and_name!(
+                                "Warning: unable to obtain emeter values from {addr} [{alias}]: {e}"
+                            );
+                            continue;
+                        }
+                    };
+                    for (chart, index) in charts_and_indexes.iter() {
+                        match emeter.get(index) {
+                            Some(value) => {
+                                let dimension_id = format!(
+                                    "{dimension_prefix}_{chart_name}",
+                                    chart_name = chart.name
                                 );
-                                0.0
-                            }) as i64,
-                        )?;
+                                collector.prepare_value(
+                                    chart.type_id,
+                                    &dimension_id,
+                                    value.as_f64().unwrap_or_else(|| {
+                                        eprintln_time_and_name!(
+                                            "Warning: unable to parse `{index}` value `{value}` obtained from {addr} [{alias}]"
+                                        );
+                                        0.0
+                                    }) as i64,
+                                )?;
+                            }
+                            None => {
+                                eprintln_time_and_name!(
+                                    "Warning: `{index}` is not available in emeter readings from {addr} [{alias}]"
+                                );
+                                continue;
+                            }
+                        };
                     }
-                    None => {
-                        eprintln_time_and_name!(
-                            "Warning: `{index}` is not available in emeter readings from {addr} [{alias}]"
-                        );
-                        continue;
-                    }
-                };
+                }
+                Err(e) => {
+                    eprintln_time_and_name!("Warning: failed to join async task: {e}");
+                }
             }
         }
 
