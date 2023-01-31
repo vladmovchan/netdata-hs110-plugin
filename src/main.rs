@@ -35,8 +35,7 @@ macro_rules! eprintln_time_and_name {
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let delay = env::args()
-        .skip(1)
-        .next()
+        .nth(1)
         .unwrap_or_else(|| {
             eprintln_time_and_name!("Warning: delay has not been specified, using 1 sec delay");
             "1".to_string()
