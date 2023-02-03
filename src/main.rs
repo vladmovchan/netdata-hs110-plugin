@@ -78,34 +78,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     let charts_and_indexes = vec![
         (
             Chart {
-                type_id: "Smartplugs.current",
-                name: "Current",
-                title: "Current",
-                units: "amps",
-                familiy: "current",
-                context: "smartplugpower.current",
-                charttype: Some(ChartType::line),
-                priority: Some(92000),
-                ..Default::default()
-            },
-            "current_ma",
-        ),
-        (
-            Chart {
-                type_id: "Smartplugs.voltage",
-                name: "Voltage",
-                title: "Voltage",
-                units: "volts",
-                familiy: "voltage",
-                context: "smartplugpower.voltage",
-                charttype: Some(ChartType::line),
-                priority: Some(91000),
-                ..Default::default()
-            },
-            "voltage_mv",
-        ),
-        (
-            Chart {
                 type_id: "Smartplugs.power",
                 name: "Power",
                 title: "Power",
@@ -120,6 +92,34 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         ),
         (
             Chart {
+                type_id: "Smartplugs.voltage",
+                name: "Voltage",
+                title: "Voltage",
+                units: "volts",
+                familiy: "voltage",
+                context: "smartplugpower.voltage",
+                charttype: Some(ChartType::line),
+                priority: Some(90010),
+                ..Default::default()
+            },
+            "voltage_mv",
+        ),
+        (
+            Chart {
+                type_id: "Smartplugs.current",
+                name: "Current",
+                title: "Current",
+                units: "amps",
+                familiy: "current",
+                context: "smartplugpower.current",
+                charttype: Some(ChartType::line),
+                priority: Some(90020),
+                ..Default::default()
+            },
+            "current_ma",
+        ),
+        (
+            Chart {
                 type_id: "Smartplugs.total-consumption",
                 name: "Total",
                 title: "Total consumption",
@@ -127,7 +127,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                 familiy: "consumption",
                 context: "smartplugpower.total",
                 charttype: Some(ChartType::line),
-                priority: Some(94000),
+                priority: Some(90030),
                 ..Default::default()
             },
             "total_wh",
