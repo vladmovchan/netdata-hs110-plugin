@@ -181,7 +181,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
             .iter()
             .map(|device| {
                 let device = device.clone();
-                tokio::task::spawn_blocking(move || (device.hs110.emeter_parsed(), device))
+                tokio::task::spawn_blocking(move || (device.hs110.emeter(), device))
             })
             .collect::<FuturesUnordered<_>>();
 
