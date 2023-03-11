@@ -3,7 +3,7 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use netdata_plugin::{collector::Collector, Algorithm, Chart, ChartType, Dimension};
 use serde::{Deserialize, Serialize};
 use std::{env, error, fs::File, io, thread, time::Instant};
-use tplink_hs1x0::HS110;
+use tplink_hs110::HS110;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Config {

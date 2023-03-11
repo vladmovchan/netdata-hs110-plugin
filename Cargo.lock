@@ -315,7 +315,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "tokio",
- "tplink-hs1x0",
+ "tplink-hs110",
 ]
 
 [[package]]
@@ -757,7 +757,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tplink-hs1x0"
+name = "tplink-hs110"
 version = "0.1.0"
 dependencies = [
  "anyhow",
