@@ -765,6 +765,8 @@ dependencies = [
 [[package]]
 name = "tplink-hs110"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eab5feacae0855a00d227e9c6726b76c028862b6c74f39866a80b291ed0bfe0c"
 dependencies = [
  "anyhow",
  "clap",
