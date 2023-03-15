@@ -2,6 +2,7 @@ use core::time;
 use futures::{stream::FuturesUnordered, StreamExt};
 use netdata_plugin::{collector::Collector, Algorithm, Chart, ChartType, Dimension};
 use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use std::{env, error, fs::File, io, thread, time::Instant};
 use tplink_hs110::HS110;
 
@@ -159,7 +160,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                 alias,
                 dimension_prefix,
                 ..
-            } = &**device;
+            } = device.borrow();
             let dimension = Dimension {
                 id: &format!("{dimension_prefix}_{chart_name}", chart_name = chart.name),
                 name: &format!("{alias} ({addr})"),
@@ -193,7 +194,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                         alias,
                         addr,
                         ..
-                    } = &**device;
+                    } = device.borrow();
                     let emeter = match emeter {
                         Ok(res) => res,
                         Err(e) => {
