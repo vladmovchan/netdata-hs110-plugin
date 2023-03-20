@@ -46,7 +46,10 @@ fn build() -> Result<(), DynError> {
 
     let src = target_dir().join("release/hs110-plugin");
     let dst = target_dir().join("release/hs110.plugin");
-    fs::rename(src, dst.clone())?;
+    if let Err(e) = fs::rename(&src, &dst) {
+        eprintln!("Failed to rename {src:?} to {dst:?}: {e}");
+        return Err(e.into());
+    }
 
     println!(
         "\n====\n\
